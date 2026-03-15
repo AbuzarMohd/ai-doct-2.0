@@ -1,0 +1,13 @@
+streamlit==1.36.0
+groq==0.15.0
+gtts==2.5.4
+elevenlabs==1.50.3
+speechrecognition==3.13.0
+pydub==0.25.1
+ffmpy==0.5.0
+python-dotenv==1.0.1
+requests==2.32.3
+numpy==2.2.1
+pandas==2.2.3
+pillow==11.1.0
+tqdm==4.67.1
