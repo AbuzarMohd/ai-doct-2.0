@@ -21,14 +21,10 @@ GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
 ELEVENLABS_API_KEY = st.secrets["ELEVENLABS_API_KEY"]
 
 
-system_prompt = """You have to act as a professional doctor, i know you are not but this is for learning purpose.
-What's in this image?. Do you find anything wrong with it medically?
-If you make a differential, suggest some remedies for them. Donot add any numbers or special characters in
-your response. Your response should be in one long paragraph. Also always answer as if you are answering to a real person.
-Donot say 'In the image I see' but say 'With what I see, I think you have ....'
-Dont respond as an AI model in markdown, your answer should mimic that of an actual doctor not an AI bot,
-Keep your answer concise max two sentences. No preamble start your answer right away please
-"""
+system_prompt = """You have to act as a professional doctor. What's in this image?
+Do you find anything wrong with it medically? If you make a differential,
+suggest some remedies. Answer like a real doctor speaking to a patient.
+Keep response concise maximum two sentences."""
 
 
 st.subheader("🎤 Record Your Voice Question")
@@ -48,7 +44,19 @@ image_file = st.file_uploader(
 )
 
 
-if audio and image_file:
+analyze_button = st.button("Analyze")
+
+
+if analyze_button:
+
+    if audio is None:
+        st.error("Please record your voice.")
+        st.stop()
+
+    if image_file is None:
+        st.error("Please upload an image.")
+        st.stop()
+
 
     with st.spinner("Processing your request..."):
 
@@ -75,10 +83,11 @@ if audio and image_file:
         encoded_image = encode_image(image_path)
 
 
+        # Updated Groq Vision Model
         doctor_response = analyze_image_with_query(
             query=system_prompt + " " + speech_text,
             encoded_image=encoded_image,
-            model="llama-3.2-11b-vision-preview",
+            model="meta-llama/llama-4-scout-17b-16e-instruct",
             groq_api_key=GROQ_API_KEY
         )
 
