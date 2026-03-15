@@ -1,6 +1,6 @@
 import streamlit as st
 import tempfile
-import os
+from streamlit_mic_recorder import mic_recorder
 
 from brain_of_the_doctor import encode_image, analyze_image_with_query
 from voice_of_the_patient import transcribe_with_groq
@@ -13,12 +13,10 @@ st.set_page_config(
     layout="centered"
 )
 
-
 st.title("🩺 AI Doctor with Vision and Voice")
-st.write("Upload your voice question and an image for medical observation.")
+st.write("Record your voice question and upload an image for medical observation.")
 
 
-# Get API keys from Streamlit Secrets
 GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
 ELEVENLABS_API_KEY = st.secrets["ELEVENLABS_API_KEY"]
 
@@ -33,11 +31,12 @@ Keep your answer concise max two sentences. No preamble start your answer right 
 """
 
 
-st.subheader("Upload Patient Voice")
+st.subheader("🎤 Record Your Voice Question")
 
-audio_file = st.file_uploader(
-    "Upload your voice question",
-    type=["mp3", "wav", "m4a"]
+audio = mic_recorder(
+    start_prompt="Start Recording",
+    stop_prompt="Stop Recording",
+    key="recorder"
 )
 
 
@@ -49,26 +48,17 @@ image_file = st.file_uploader(
 )
 
 
-if st.button("Analyze"):
-
-    if audio_file is None:
-        st.error("Please upload a voice file.")
-        st.stop()
-
-    if image_file is None:
-        st.error("Please upload an image.")
-        st.stop()
-
+if audio and image_file:
 
     with st.spinner("Processing your request..."):
 
-        # Save uploaded audio to temp file
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as temp_audio:
-            temp_audio.write(audio_file.read())
+        # Save recorded audio
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_audio:
+            temp_audio.write(audio["bytes"])
             audio_path = temp_audio.name
 
 
-        # Speech to Text
+        # Speech to text
         speech_text = transcribe_with_groq(
             stt_model="whisper-large-v3",
             audio_filepath=audio_path,
@@ -85,7 +75,6 @@ if st.button("Analyze"):
         encoded_image = encode_image(image_path)
 
 
-        # AI Doctor Analysis
         doctor_response = analyze_image_with_query(
             query=system_prompt + " " + speech_text,
             encoded_image=encoded_image,
@@ -94,7 +83,6 @@ if st.button("Analyze"):
         )
 
 
-        # Convert doctor response to speech
         audio_output_path = "doctor_response.mp3"
 
         text_to_speech_with_elevenlabs(
@@ -111,7 +99,7 @@ if st.button("Analyze"):
     st.write(speech_text)
 
 
-    st.subheader("Doctor's Response")
+    st.subheader("Doctor Response")
     st.write(doctor_response)
 
 
